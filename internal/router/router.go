@@ -35,11 +35,13 @@ func NewRouter(ctx context.Context, cfg *config.Config) (http.Handler, func(), e
 	}
 
 	createInvSvc := service.NewCreateInvoice(repo)
+	getInvsSvc := service.NewGetInvoices(repo)
 
 	vtr := pkg.GetValidator()
 
 	// TODO: Write test code using httptest pkg.
 	createInvHdlr := handler.NewCreateInvoice(createInvSvc, vtr)
+	getInvsHdlr := handler.NewGetInvoices(getInvsSvc, vtr)
 
 	loginHdlr := handler.NewTestLogin(jwter)
 	r.Post("/api/testlogin", loginHdlr.ServeHTTP)
@@ -47,6 +49,7 @@ func NewRouter(ctx context.Context, cfg *config.Config) (http.Handler, func(), e
 	r.Route("/api/invoices", func(r chi.Router) {
 		r.Use(middleware.AuthJWT(jwter))
 		r.Post("/", createInvHdlr.ServeHTTP)
+		r.Get("/", getInvsHdlr.ServeHTTP)
 	})
 
 	return r, cleanup, nil
