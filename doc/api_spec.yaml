@@ -1,0 +1,310 @@
+openapi: 3.1.0
+info:
+  title: Super Payment Kun API
+  version: '1.0'
+  description: API for managing invoices and test-login functionality for Super Payment Kun
+servers:
+  - url: 'http://localhost:8080'
+paths:
+  /api/invoices:
+    post:
+      summary: Create an invoice (請求書作成)
+      operationId: createInvoice
+      requestBody:
+        description: Invoice creation request (請求書作成リクエスト)
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceRequest'
+      responses:
+        '201':
+          description: Invoice created successfully (請求書が正常に作成されました)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateInvoiceNormalResp'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+          summary: Get a list of invoices (請求書一覧取得)
+          operationId: getInvoices
+          parameters:
+            - in: query
+              name: from_due_date
+              required: true
+              schema:
+                type: string
+                format: date
+                example: '2024-05-28'
+              description: due date starting date (支払期日の期間開始日)
+            - in: query
+              name: to_due_date
+              required: true
+              schema:
+                type: string
+                format: date
+                example: '2024-07-01'
+              description: due date ending date (支払期日の期間終了日)
+            - in: query
+              name: limit
+              schema:
+                type: integer
+                minimum: 1
+                example: 10
+                default: 30
+              description: Maximum number of results (最大結果数)
+            - in: query
+              name: cursor
+              schema:
+                type: string
+                description: Cursor for pagination (カーソル)
+            - in: query
+              name: direction
+              schema:
+                type: string
+                enum: [fwd, bwd]
+                default: fwd
+                description: oldest due date first (fwd) or newest due date first (bwd) (支払期日の古い順 または 新しい順)
+          responses:
+            '200':
+              description: List of invoices (請求書の一覧)
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      invoices:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Invoice'
+                      cursor:
+                        type: string
+                        example: 'eyJhbGciOi...'
+                        description: Cursor for the next set of results (次の結果セットのカーソル)
+                      has_next:
+                        type: boolean
+                        description: true if there are more invoices in the same direction (同じ方向に請求書がさらにある場合はtrue)
+                      has_prev:
+                        type: boolean
+                        description: true if there are more invoices in the opposite direction (逆の方向に請求書がさらにある場合はtrue)
+            '400':
+              $ref: '#/components/responses/BadRequest'
+            '500':
+              $ref: '#/components/responses/InternalServerError'
+  /api/test-login:
+    post:
+      summary: Test login and generate JWT token (テストログイン・JWTトークン生成)
+      description: Test login and generate JWT token for one fixed user (佐藤太郎 at 会社A as admin). This is for testing purposes only. Please set the generated token in the Authorization header for other API requests.
+      operationId: testLogin
+      responses:
+        '200':
+          description: JWT token generated successfully (JWTトークンが正常に生成されました)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestLoginNormalResp'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  schemas:
+    CreateInvoiceRequest:
+      type: object
+      properties:
+        vendor_id:
+          type: string
+          format: uuid
+          example: '323e4567-e89b-12d3-a456-426614174000'
+          description: Vendor ID (取引先ID)
+        vendor_bank_account_id:
+          type: string
+          format: uuid
+          example: '423e4567-e89b-12d3-a456-426614174000'
+          description: Vendor bank account ID (取引先銀行口座ID)
+        payment_amount:
+          type: number
+          format: float
+          example: 10000.0
+          description: Payment amount (支払金額)
+        due_date:
+          type: string
+          format: date
+          example: '2024-06-27'
+          description: Due date (支払期日)
+      required:
+        - vendor_id
+        - vendor_bank_account_id
+        - payment_amount
+        - due_date
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '523e4567-e89b-12d3-a456-426614174000'
+          description: Invoice ID (請求書ID)
+        company_id:
+          type: string
+          format: uuid
+          example: '123e4567-e89b-12d3-a456-426614174000'
+          description: Company ID (企業ID)
+        vendor_id:
+          type: string
+          format: uuid
+          example: '323e4567-e89b-12d3-a456-426614174000'
+          description: Vendor ID (取引先ID)
+        vendor_name:
+          type: string
+          example: 'ベンダーA'
+          description: Vendor name (取引先名)
+        vendor_bank_account_id:
+          type: string
+          format: uuid
+          example: '423e4567-e89b-12d3-a456-426614174000'
+          description: Vendor bank account ID (取引先銀行口座ID)
+        bank_name:
+          type: string
+          example: '銀行A'
+          description: Bank name (銀行名)
+        branch_name:
+          type: string
+          example: '青山支店'
+          description: Branch name (支店名)
+        account_number:
+          type: string
+          example: '1234567890'
+          description: Account number (口座番号)
+        account_name:
+          type: string
+          example: 'ベンダーA口座'
+          description: Account name (口座名義)
+        payment_amount:
+          type: number
+          format: float
+          example: 10000.0
+          description: Payment amount (支払金額)
+        status:
+          type: integer
+          example: 1
+          description: Status (ステータス)
+        status_name:
+          type: string
+          example: '未処理'
+          description: Status name (ステータス名)
+        fee:
+          type: number
+          format: float
+          example: 400.0
+          description: Fee (手数料)
+        fee_rate:
+          type: number
+          format: float
+          example: 0.04
+          description: Fee rate (手数料率)
+        consumption_tax:
+          type: number
+          format: float
+          example: 40.0
+          description: Consumption tax (消費税)
+        consumption_tax_rate:
+          type: number
+          format: float
+          example: 0.1
+          description: Consumption tax rate (消費税率)
+        billed_amount:
+          type: number
+          format: float
+          example: 10440.0
+          description: Billed amount (請求金額)
+        issue_date:
+          type: string
+          format: date
+          example: '2024-05-26'
+          description: Issue date (発行日)
+        due_date:
+          type: string
+          format: date
+          example: '2024-05-27'
+          description: Due date (支払期日)
+    NormalResp:
+      type: object
+      properties:
+        api_code:
+          type: string
+          example: '000000'
+          description: API code (APIコード)
+        data:
+          type: object
+          additionalProperties: true
+          example: {}
+          description: Response data (レスポンスデータ)
+    CreateInvoiceNormalResp:
+      allOf:
+        - $ref: '#/components/schemas/NormalResp'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Invoice'
+    GetInvoicesNormalResp:
+      allOf:
+        - $ref: '#/components/schemas/NormalResp'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Invoice'
+    TestLoginNormalResp:
+      allOf:
+        - $ref: '#/components/schemas/NormalResp'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                会社A_佐藤太郎_admin_access_token:
+                  type: string
+                  example: 'eyJhbGciOi...'
+                  description: JWT token for 佐藤太郎 at 会社A as admin (佐藤太郎 at 会社A の管理者用JWTトークン). It expires in 1 day (1日で期限切れ).
+    AppErrorBadRequest:
+      type: object
+      properties:
+        api_code:
+          type: string
+          example: '100001'
+          description: API code (APIコード)
+        err_messages:
+          type: array
+          items:
+            type: string
+          example: ['Invalid request parameters']
+          description: Error messages (エラーメッセージ)
+    AppErrorInternalServerError:
+      type: object
+      properties:
+        api_code:
+          type: string
+          example: '099999'
+          description: API code (APIコード)
+        err_messages:
+          type: array
+          items:
+            type: string
+          example: ['I']
+          description: Error messages (エラーメッセージ)
+  responses:
+    BadRequest:
+      description: Bad request error response (不正リクエストエラーのレスポンス)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AppErrorBadRequest'
+    InternalServerError:
+      description: Internal server error response (内部サーバーエラーのレスポンス)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AppErrorInternalServerError'
