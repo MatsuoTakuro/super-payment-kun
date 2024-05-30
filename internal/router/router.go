@@ -9,6 +9,7 @@ import (
 	"super-payment-kun/internal/pkg"
 	"super-payment-kun/internal/repository"
 	"super-payment-kun/internal/router/middleware"
+	"super-payment-kun/internal/service"
 
 	"github.com/go-chi/chi"
 )
@@ -28,18 +29,24 @@ func NewRouter(ctx context.Context, cfg *config.Config) (http.Handler, func(), e
 
 	r := chi.NewRouter()
 
-	_, err = repository.New(db, clocker)
+	repo, err := repository.New(db, clocker)
 	if err != nil {
 		return nil, cleanup, fmt.Errorf("failed to create repository: %w", err)
 	}
 
-	_ = pkg.GetValidator()
+	createInvSvc := service.NewCreateInvoice(repo)
+
+	vtr := pkg.GetValidator()
+
+	// TODO: Write test code using httptest pkg.
+	createInvHdlr := handler.NewCreateInvoice(createInvSvc, vtr)
 
 	loginHdlr := handler.NewTestLogin(jwter)
 	r.Post("/api/testlogin", loginHdlr.ServeHTTP)
 
 	r.Route("/api/invoices", func(r chi.Router) {
 		r.Use(middleware.AuthJWT(jwter))
+		r.Post("/", createInvHdlr.ServeHTTP)
 	})
 
 	return r, cleanup, nil
