@@ -25,6 +25,20 @@ This is a simple API for managing invoices and payments.
 
 This will build the images for the Go app and MySQL, migrate/seed the database, and start the containers.
 
+#### Termination
+
+To stop and remove the Docker containers, run:
+
+```sh
+make down
+```
+
+If you want to remove the Docker volumes as well, run:
+
+```sh
+make clean
+```
+
 ## API Usage
 
 ### Test Login

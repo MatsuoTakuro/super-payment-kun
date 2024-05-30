@@ -7,10 +7,10 @@ build:
 run:
 	docker compose up -d
 
-rm: down rm_volume
-
 down:
 	docker compose down  --remove-orphans
+
+clean: down rm_volume
 
 rm_volume:
 	docker volume rm super-payment-kun_db_data
