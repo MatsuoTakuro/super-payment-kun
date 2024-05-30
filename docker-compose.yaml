@@ -1,0 +1,51 @@
+services:
+  app:
+    image: super-payment-kun
+    container_name: super-payment-kun
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      HTTP_PORT: 8080
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${USERNAME}
+      DB_PASSWORD: ${USERPASS}
+      DB_NAME: ${DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8080"
+      - "40002:40001"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+  db:
+    image: mysql:8.4.0
+    platform: linux/amd64
+    container_name: super-payment-kun-db
+    environment:
+      MYSQL_ROOT_USER: ${ROOTUSER}
+      MYSQL_ROOT_PASSWORD: ${ROOTPASS}
+      MYSQL_USER: ${USERNAME}
+      MYSQL_PASSWORD: ${USERPASS}
+      MYSQL_DATABASE: ${DATABASE}
+      TZ: Asia/Tokyo
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 50s
+    ports:
+      - "3316:3306"
+    volumes:
+      - $PWD/_tools/mysql/conf.d:/etc/mysql/conf.d:cached
+      - $PWD/_tools/mysql/init/:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
+volumes:
+  db_data:
+    driver: local

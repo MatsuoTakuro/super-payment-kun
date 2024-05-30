@@ -1,0 +1,5 @@
+[mysqld]
+default-storage-engine=innodb
+character_set_server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+sql_mode=TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY,NO_ENGINE_SUBSTITUTION

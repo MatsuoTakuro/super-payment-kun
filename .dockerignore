@@ -1,0 +1,9 @@
+# Ignore everything
+*
+
+# Except for monaka's build
+!*.go
+!**/*.go
+!go.mod
+!go.sum
+!.air.toml
